@@ -14,8 +14,13 @@ else
     fi
 fi
 
-echo "[INFO] building wasm module using $WASIGO"
-GOOS=wasip1 GOARCH=wasm $WASIGO build -o target/goenv.wasm module/main.go
+echo "[INFO] building wasm modules using $WASIGO"
+for dir in module/*; do
+    modname=$(basename ${dir})
+    GOOS=wasip1 GOARCH=wasm $WASIGO build   \
+        -o "target/${modname}.wasm"         \
+        "./module/${modname}/main.go"
+done
 ls -lAh target/
 
 echo "[INFO] building server"

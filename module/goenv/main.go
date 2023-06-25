@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strconv"
 	"unsafe"
 )
 
@@ -25,7 +27,25 @@ func log_string(s string) {
 }
 
 func main() {
-	log_i32(42)
+	values, err := url.ParseQuery(os.Getenv("http_query"))
+	if err != nil {
+		fmt.Println(err)
+
+		return
+	}
+
+	if values.Has("a") {
+		v, err := strconv.Atoi(values.Get("a"))
+		if err != nil {
+			fmt.Println(err)
+
+			return
+		}
+
+		log_i32(uint32(v))
+	} else {
+		log_i32(42)
+	}
 
 	fmt.Println("goenv environment:")
 
@@ -33,5 +53,5 @@ func main() {
 		fmt.Println("- ", e)
 	}
 
-	log_string("Hello from module")
+	log_string(fmt.Sprintf("Hello from %v", os.Getenv("remote_addr")))
 }
