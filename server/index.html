@@ -1,10 +1,19 @@
 <html>
 <body>
+    <h1>Go Wasm FaaS</h1>
+    {{if .Funcs}}
+    <h2>Registered functions</h2>
+    <ul>{{range .Funcs}}
+        <li><a href="/run/{{.}}">{{.}}</a></li>
+    {{end}}</ul>
+    {{end}}
+    <h2>New function</h2>
     <form method="POST" action="/" enctype="multipart/form-data">
     <input type="text" name="modname" /><br/>
     <input type="file" max="1" name="modfile" accept=".wasm" /><br/>
     <input type="submit" value="register" />
     </form>
+    {{if .Msg}}{{.Msg}}{{end}}
 </body>
 </html>
 

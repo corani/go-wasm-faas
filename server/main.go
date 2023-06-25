@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/tetratelabs/wazero"
@@ -18,7 +19,9 @@ import (
 const MB = 1 << 20
 
 //go:embed index.html
-var indexFile []byte
+var indexFile string
+
+var t *template.Template
 
 type function struct {
 	runtime wazero.Runtime
@@ -126,10 +129,28 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, stdoutBuf.String())
 }
 
+func getRegisteredFuncs() []string {
+	var funcs []string
+
+	for k := range registeredFunctions {
+		funcs = append(funcs, k)
+	}
+
+	return funcs
+}
+
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+	type data struct {
+		Funcs []string
+		Msg   string
+	}
+
 	switch r.Method {
 	case http.MethodGet:
-		w.Write(indexFile)
+		t.Execute(w, data{
+			Funcs: getRegisteredFuncs(),
+			Msg:   "",
+		})
 	case http.MethodPost:
 		if err := r.ParseMultipartForm(10 * MB); err != nil {
 			log.Print(err)
@@ -171,11 +192,18 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Fprintf(w, "registered /run/%v", modname)
+		t.Execute(w, data{
+			Funcs: getRegisteredFuncs(),
+			Msg:   fmt.Sprintf("registered /run/%v", modname),
+		})
 	}
 }
 
 func main() {
+	t = template.Must(
+		template.New("index").Parse(indexFile),
+	)
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", registerHandler)
 	r.HandleFunc("/run/{modname}", runHandler)
